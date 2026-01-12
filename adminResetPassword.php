@@ -20,14 +20,23 @@ if (strlen($newPassword) < 6) {
 try {
     $conn = db();
 
+    $check = $conn->prepare("SELECT 1 FROM office_accounts WHERE username = ? LIMIT 1");
+    $check->bind_param("s", $username);
+    $check->execute();
+    $check->store_result();
+    if ($check->num_rows !== 1) {
+        json_response(404, ["status" => "error", "message" => "Office account not found."]);
+    }
+    $check->close();
+
     $hash = password_hash($newPassword, PASSWORD_DEFAULT);
 
     $stmt = $conn->prepare("UPDATE office_accounts SET password = ? WHERE username = ? LIMIT 1");
     $stmt->bind_param("ss", $hash, $username);
     $stmt->execute();
 
-    if ($stmt->affected_rows !== 1) {
-        json_response(404, ["status" => "error", "message" => "Office account not found."]);
+    if ($stmt->errno) {
+        json_response(500, ["status" => "error", "message" => "Failed to update password."]);
     }
 
     json_response(200, ["status" => "success", "message" => "Password updated."]);

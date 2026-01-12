@@ -15,9 +15,27 @@ CREATE TABLE IF NOT EXISTS documents (
   receiver_username VARCHAR(64) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   delivered_at TIMESTAMP NULL DEFAULT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'in_transit',
   INDEX idx_docs_receiver (receiver_username),
   INDEX idx_docs_source (source_username),
+  INDEX idx_docs_status (status),
   CONSTRAINT fk_docs_source FOREIGN KEY (source_username) REFERENCES office_accounts(username),
   CONSTRAINT fk_docs_receiver FOREIGN KEY (receiver_username) REFERENCES office_accounts(username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS document_events (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  unique_file_key VARCHAR(32) NOT NULL,
+  event_type VARCHAR(32) NOT NULL,
+  actor_username VARCHAR(64) NOT NULL,
+  note VARCHAR(255) NULL,
+  from_status VARCHAR(32) NULL,
+  to_status VARCHAR(32) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_ev_doc (unique_file_key),
+  INDEX idx_ev_actor (actor_username),
+  INDEX idx_ev_created (created_at),
+  CONSTRAINT fk_ev_doc FOREIGN KEY (unique_file_key) REFERENCES documents(unique_file_key),
+  CONSTRAINT fk_ev_actor FOREIGN KEY (actor_username) REFERENCES office_accounts(username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

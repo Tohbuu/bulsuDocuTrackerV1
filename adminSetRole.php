@@ -23,7 +23,6 @@ if ($targetUsername === $me) {
 try {
     $conn = db();
 
-    // Verify target exists and current role
     $q = $conn->prepare("SELECT is_admin FROM office_accounts WHERE username = ? LIMIT 1");
     $q->bind_param("s", $targetUsername);
     $q->execute();
@@ -35,7 +34,6 @@ try {
     $q->fetch();
     $q->close();
 
-    // If demoting an admin, ensure not last admin
     if (((int)$currentIsAdmin) === 1 && $targetIsAdmin === 0) {
         $cnt = $conn->prepare("SELECT COUNT(*) FROM office_accounts WHERE is_admin = 1");
         $cnt->execute();
@@ -52,7 +50,7 @@ try {
     $u->bind_param("is", $targetIsAdmin, $targetUsername);
     $u->execute();
 
-    if ($u->affected_rows !== 1) {
+    if ($u->errno) {
         json_response(500, ["status" => "error", "message" => "Failed to update role."]);
     }
 

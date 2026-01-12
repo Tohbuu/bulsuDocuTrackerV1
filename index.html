@@ -15,7 +15,8 @@
       <button class="tab-btn" data-tab="send" id="sendTabBtn" disabled>Send Documents</button>
       <button class="tab-btn" data-tab="receive" id="receiveTabBtn" disabled>Receive Documents</button>
       <button class="tab-btn" data-tab="track" id="trackTabBtn" disabled>Track Documents</button>
-      <button class="tab-btn" data-tab="about">About Developer</button>
+      <button class="tab-btn" data-tab="dashboard" id="dashboardTabBtn" disabled>Dashboard</button>
+      <!-- <button class="tab-btn" data-tab="about">About Developer</button> -->
       <button class="tab-btn" data-tab="admin" id="adminTabBtn" disabled style="display:none;">Admin</button>
       <button id="logoutBtn" style="display:none;">Logout</button>
     </header>
@@ -57,6 +58,7 @@
               <input type="text" id="sendReferringTo" name="referringTo" />
             </div>
 
+            <!-- FIX #1: restore the radio buttons (your current .radio-group is empty) -->
             <div class="form-group">
               <label>Type of Communication:</label>
               <div class="radio-group">
@@ -69,6 +71,27 @@
                   External Communication
                 </label>
               </div>
+            </div>
+
+            <div class="form-group">
+              <label for="receiverOfficeSelect">Receiver Office (pick from list)</label>
+              <select id="receiverOfficeSelect" style="width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:6px; font-size:1rem;">
+                <option value="">Loading...</option>
+              </select>
+              <small class="muted">Selecting an office will fill the username input below.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="receiverOfficeSearch">Search / Autocomplete Receiver Office</label>
+              <input
+                type="text"
+                id="receiverOfficeSearch"
+                placeholder="Type a username (e.g., registrar)"
+                list="receiverOfficeDatalist"
+                autocomplete="off"
+              />
+              <datalist id="receiverOfficeDatalist"></datalist>
+              <small class="muted">Tip: start typing, then pick a suggestion.</small>
             </div>
 
             <div class="form-group">
@@ -117,11 +140,51 @@
             <div class="form-group">
               <label for="receiveFileID">Unique File ID</label>
               <input type="text" id="receiveFileID" name="fileID" required />
+              <small class="muted">Tip: paste the File ID, then click Lookup to confirm details before marking received.</small>
             </div>
-            <div class="form-actions">
+
+            <div class="form-actions" style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+              <button type="button" id="receiveLookupBtn">Lookup</button>
               <button type="submit" class="btn-primary">Mark as Received</button>
             </div>
           </form>
+
+          <div id="receivePreview" class="result-card" style="display:none; margin-top:14px; text-align:left;">
+            <div class="result-header">
+              <div>
+                <div class="muted">Status</div>
+                <div id="receivePreviewStatus" class="result-title"></div>
+              </div>
+              <div style="text-align:right;">
+                <div class="muted">File ID</div>
+                <div id="receivePreviewFileId" class="mono"></div>
+              </div>
+            </div>
+
+            <div class="result-grid">
+              <div class="result-field">
+                <div class="muted">Document</div>
+                <div id="receivePreviewDoc"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">Type</div>
+                <div id="receivePreviewType"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">From</div>
+                <div id="receivePreviewFrom" class="mono"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">Created</div>
+                <div id="receivePreviewCreated"></div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+              <button type="button" class="btn-small status-action-btn" data-action="delivered" data-fileid="" id="receiveDeliverBtn">Deliver</button>
+              <button type="button" class="btn-small btn-danger status-action-btn" data-action="rejected" data-fileid="" id="receiveRejectBtn">Reject</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -138,6 +201,177 @@
               <button type="submit" class="btn-primary">Track</button>
             </div>
           </form>
+
+          <!-- NEW: track result card -->
+          <div id="trackResult" class="result-card" style="display:none; margin-top:16px; text-align:left;">
+            <div class="result-header">
+              <div>
+                <div class="muted">Status</div>
+                <div id="trackStatus" class="result-title"></div>
+              </div>
+              <div style="text-align:right;">
+                <div class="muted">File ID</div>
+                <div id="trackFileId" style="font-family:monospace;"></div>
+              </div>
+            </div>
+
+            <div class="result-grid">
+              <div class="result-field">
+                <div class="muted">Document Name</div>
+                <div id="trackDocumentName"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">Document Type</div>
+                <div id="trackDocumentType"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">Referring To</div>
+                <div id="trackReferringTo"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">Source Office</div>
+                <div id="trackSourceOffice" style="font-family:monospace;"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">Receiver Office</div>
+                <div id="trackReceiverOffice" style="font-family:monospace;"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">Created At</div>
+                <div id="trackCreatedAt"></div>
+              </div>
+              <div class="result-field">
+                <div class="muted">Delivered At</div>
+                <div id="trackDeliveredAt"></div>
+              </div>
+            </div>
+
+            <h3 style="margin-top:14px; margin-bottom:8px;">History</h3>
+            <div class="table-wrap">
+              <table class="data-table" style="min-width: 640px;">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>Event</th>
+                    <th>Actor</th>
+                    <th>From → To</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody id="trackEventsTbody">
+                  <tr><td colspan="5">No history loaded.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:8px;">
+              <button type="button" id="trackClearBtn">Clear</button>
+              <button type="button" id="trackCopyBtn">Copy Summary</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="tab portal-section">
+        <div class="portal-section-content">
+          <h1 class="portal-section-title">My Dashboard</h1>
+
+          <div class="dash-stats" id="dashStats" style="margin: 10px 0 14px; text-align:left;"></div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <h2 style="margin:0; color:#333; font-size:1.15rem; text-align:left;">Inbox (received by me)</h2>
+            <button type="button" id="dashRefreshBtn">Refresh</button>
+          </div>
+
+          <div class="panel-toolbar" style="margin: 10px 0 12px;">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
+              <div class="form-group" style="margin:0; min-width:220px; flex:1;">
+                <label for="dashSearch">Search (File ID / Document)</label>
+                <input type="text" id="dashSearch" placeholder="Type to filter..." />
+              </div>
+
+              <div class="form-group" style="margin:0; min-width:180px;">
+                <label for="dashStatus">Status</label>
+                <select id="dashStatus">
+                  <option value="">All</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin:0; min-width:180px;">
+                <label>&nbsp;</label>
+                <label style="display:flex; gap:8px; align-items:center; font-weight:600;">
+                  <input type="checkbox" id="dashAutoRefresh" />
+                  Auto-refresh (15s)
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:10px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>File ID</th>
+                  <th>Document</th>
+                  <th>Status</th>
+                  <th>From</th>
+                  <th>Created</th>
+                  <th>Delivered</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dashInboxTbody">
+                <tr><td colspan="7">No data yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 style="margin: 18px 0 10px; color:#333; font-size:1.15rem; text-align:left;">Outbox (sent by me)</h2>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>File ID</th>
+                  <th>Document</th>
+                  <th>Status</th>
+                  <th>To</th>
+                  <th>Created</th>
+                  <th>Delivered</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dashOutboxTbody">
+                <tr><td colspan="7">No data yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 style="margin: 10px 0; color:#333; font-size:1.15rem; text-align:left;">Recent Activity</h2>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-bottom:10px;">
+            <button type="button" id="activityRefreshBtn">Refresh Activity</button>
+          </div>
+          <div class="table-wrap" style="margin-top:10px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Type</th>
+                  <th>File ID</th>
+                  <th>Document</th>
+                  <th>By</th>
+                </tr>
+              </thead>
+              <tbody id="activityTbody">
+                <tr><td colspan="5">No activity yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -181,22 +415,91 @@
           <hr style="margin: 18px 0; border:0; border-top:1px solid #eee;" />
 
           <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-            <h2 style="margin: 0; color:#333; font-size:1.2rem; text-align:left;">Existing Offices</h2>
-            <button type="button" id="adminRefreshBtn">Refresh</button>
+            <h2 style="margin: 0; color:#333; font-size:1.2rem; text-align:left;">All Documents</h2>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button type="button" id="adminDocsExportBtn">Export CSV</button>
+              <button type="button" id="adminDocsRefreshBtn">Refresh</button>
+            </div>
           </div>
 
-          <div style="margin-top:12px; overflow:auto; max-height:260px; border:1px solid #eee; border-radius:8px;">
-            <table id="adminOfficesTable" style="width:100%; border-collapse:collapse; font-size:.95rem;">
+          <div class="form-group-row" style="margin-top:10px;">
+            <div class="form-group" style="min-width:160px;">
+              <label for="adminDocsQ">Search File ID</label>
+              <input type="text" id="adminDocsQ" placeholder="BULSU-..." />
+            </div>
+            <div class="form-group" style="min-width:160px;">
+              <label for="adminDocsUser">Office Username</label>
+              <input type="text" id="adminDocsUser" placeholder="source or receiver" />
+            </div>
+            <div class="form-group" style="min-width:160px;">
+              <label for="adminDocsStatus">Status</label>
+              <select id="adminDocsStatus">
+                <option value="">All</option>
+                <option value="in_transit">In Transit</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="rejected">Rejected</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="min-width:160px;">
+              <label for="adminDocsFrom">From (Created)</label>
+              <input type="date" id="adminDocsFrom" />
+            </div>
+
+            <div class="form-group" style="min-width:160px;">
+              <label for="adminDocsTo">To (Created)</label>
+              <input type="date" id="adminDocsTo" />
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:10px;">
+            <table class="data-table">
               <thead>
-                <tr style="background:#f7f7f7;">
-                  <th style="text-align:left; padding:10px; border-bottom:1px solid #eee;">Username</th>
-                  <th style="text-align:left; padding:10px; border-bottom:1px solid #eee;">Role</th>
-                  <th style="text-align:left; padding:10px; border-bottom:1px solid #eee;">Created</th>
-                  <th style="text-align:left; padding:10px; border-bottom:1px solid #eee;">Actions</th>
+                <tr>
+                  <th>File ID</th>
+                  <th>Document</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Created</th>
+                  <th>Delivered</th>
                 </tr>
               </thead>
-              <tbody id="adminOfficesTbody">
-                <tr><td colspan="4" style="padding:10px; color:#666;">Click Refresh to load.</td></tr>
+              <tbody id="adminDocsTbody">
+                <tr><td colspan="8">Click Refresh to load.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- NEW: Per-Office Counts -->
+          <hr style="margin: 18px 0; border:0; border-top:1px solid #eee;" />
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <h2 style="margin: 0; color:#333; font-size:1.2rem; text-align:left;">Per-Office Document Counts</h2>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button type="button" id="adminOfficeStatsExportBtn">Export CSV</button>
+              <button type="button" id="adminOfficeStatsRefreshBtn">Refresh</button>
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:10px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Office</th>
+                  <th>Sent</th>
+                  <th>Sent (Delivered)</th>
+                  <th>Sent (In Transit)</th>
+                  <th>Received</th>
+                  <th>Received (Delivered)</th>
+                  <th>Received (In Transit)</th>
+                </tr>
+              </thead>
+              <tbody id="adminOfficeStatsTbody">
+                <tr><td colspan="7">Click Refresh to load.</td></tr>
               </tbody>
             </table>
           </div>
@@ -215,6 +518,55 @@
               <button type="submit" class="btn-primary">Update Password</button>
             </div>
           </form>
+
+          <hr style="margin: 18px 0; border:0; border-top:1px solid #eee;" />
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <h2 style="margin: 0; color:#333; font-size:1.2rem; text-align:left;">Office Accounts</h2>
+            <button type="button" id="adminRefreshBtn">Refresh</button>
+          </div>
+
+          <div class="table-wrap" style="margin-top:10px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminOfficesTbody">
+                <tr><td colspan="4">Click Refresh to load.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr style="margin: 18px 0; border:0; border-top:1px solid #eee;" />
+
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <h2 style="margin: 0; color:#333; font-size:1.2rem; text-align:left;">System Activity</h2>
+            <button type="button" id="adminActivityRefreshBtn">Refresh</button>
+          </div>
+
+          <div class="table-wrap" style="margin-top:10px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Type</th>
+                  <th>File ID</th>
+                  <th>Document</th>
+                  <th>Actor</th>
+                  <th>From → To</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody id="adminActivityTbody">
+                <tr><td colspan="7">Click Refresh to load.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </main>
@@ -223,326 +575,44 @@
       background:#333; color:#fff; padding:16px 24px; border-radius:5px; z-index:1000; font-weight:bold;
       box-shadow:0 0 10px rgba(0,0,0,0.5);"></div>
 
-    <script>
-      const buttons = document.querySelectorAll(".tab-btn");
-      const tabs = document.querySelectorAll(".tab");
+    <div id="statusModal" class="modal" style="display:none;" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="statusModalTitle">
+        <div class="modal-header">
+          <h3 id="statusModalTitle" style="margin:0;">Update Document Status</h3>
+          <button type="button" id="statusModalCloseBtn" class="btn-icon" aria-label="Close">×</button>
+        </div>
 
-      function showPopup(message, isSuccess = true) {
-        const popup = document.getElementById("popup");
-        popup.textContent = message;
-        popup.style.background = isSuccess ? "#333" : "#b22222";
-        popup.style.display = "block";
-        setTimeout(() => (popup.style.display = "none"), 3000);
-      }
+        <form id="statusModalForm">
+          <div class="form-group">
+            <label for="statusModalFileId">File ID</label>
+            <input type="text" id="statusModalFileId" readonly />
+          </div>
 
-      function activateTab(tabId) {
-        buttons.forEach((b) => b.classList.remove("active"));
-        tabs.forEach((t) => t.classList.remove("active"));
+          <div class="form-group">
+            <label for="statusModalStatus">New Status</label>
+            <select id="statusModalStatus" required>
+              <option value="in_transit">In Transit</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="rejected">Rejected</option>
+              <option value="archived">Archived</option>
+            </select>
+            <small class="muted" id="statusModalHint"></small>
+          </div>
 
-        const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-        const tab = document.getElementById(tabId);
-        if (btn) btn.classList.add("active");
-        if (tab) tab.classList.add("active");
-      }
+          <div class="form-group">
+            <label for="statusModalNote">Note (optional)</label>
+            <input type="text" id="statusModalNote" maxlength="255" placeholder="Reason / remarks..." />
+          </div>
 
-      function setAuthedUI(isAuthed, isAdmin = false) {
-        document.getElementById("sendTabBtn").disabled = !isAuthed;
-        document.getElementById("receiveTabBtn").disabled = !isAuthed;
-        document.getElementById("trackTabBtn").disabled = !isAuthed;
+          <div class="form-actions" style="display:flex; gap:8px; justify-content:flex-end;">
+            <button type="button" id="statusModalCancelBtn">Cancel</button>
+            <button type="submit" class="btn-primary" id="statusModalSaveBtn">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
-        const adminBtn = document.getElementById("adminTabBtn");
-        adminBtn.disabled = !(isAuthed && isAdmin);
-        adminBtn.style.display = (isAuthed && isAdmin) ? "" : "none";
-
-        document.getElementById("loginTabBtn").style.display = isAuthed ? "none" : "";
-        document.getElementById("logoutBtn").style.display = isAuthed ? "" : "none";
-
-        if (isAuthed) activateTab("send");
-        else activateTab("login");
-      }
-
-      buttons.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          if (btn.disabled) return;
-          activateTab(btn.getAttribute("data-tab"));
-        });
-      });
-
-      // Tag/QR generator (kept)
-      (function () {
-        const generateBtn = document.getElementById("generateBtn");
-        const resetBtn = document.getElementById("resetSendBtn");
-        const qrImage = document.getElementById("qrImage");
-        const docTagDiv = document.getElementById("docTag");
-        const docTagInput = document.getElementById("docTagInput");
-        const generatedArea = document.getElementById("generatedArea");
-        const copyBtn = document.getElementById("copyTagBtn");
-        const printBtn = document.getElementById("printQrBtn");
-
-        function makeTag() {
-          const ts = Date.now().toString(36).toUpperCase();
-          const rnd = Math.random().toString(36).slice(2, 8).toUpperCase();
-          return `BULSU-${ts}-${rnd}`;
-        }
-
-        function setQRfor(tag) {
-          const data = encodeURIComponent(tag);
-          qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${data}`;
-        }
-
-        generateBtn.addEventListener("click", function () {
-          const tag = makeTag();
-          docTagDiv.textContent = tag;
-          docTagInput.value = tag;
-          setQRfor(tag);
-          generatedArea.style.display = "flex";
-        });
-
-        resetBtn.addEventListener("click", function () {
-          docTagDiv.textContent = "";
-          docTagInput.value = "";
-          qrImage.src = "";
-          generatedArea.style.display = "none";
-          document.getElementById("portalForm-send").reset();
-        });
-
-        copyBtn.addEventListener("click", function () {
-          const tag = docTagInput.value;
-          if (!tag) return;
-          navigator.clipboard?.writeText(tag).then(() => {
-            copyBtn.textContent = "Copied";
-            setTimeout(() => (copyBtn.textContent = "Copy Tag"), 1200);
-          });
-        });
-
-        printBtn.addEventListener("click", function () {
-          const tag = docTagInput.value;
-          const src = qrImage.src;
-          if (!tag || !src) return;
-
-          const printHtml = `
-            <!doctype html>
-            <html><head><meta charset="utf-8"><title>Print QR - ${tag}</title>
-            <style>
-              @page { size: 8.5in 11in; margin: 0.5in; }
-              html,body { height:100%; margin:0; padding:0; }
-              body { display:flex; align-items:center; justify-content:center; font-family: Arial, sans-serif; }
-              .sheet { width:100%; height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-              .qr { width:300px; height:300px; }
-              .tag { font-family: monospace; margin-top:16px; font-size:18px; word-break:break-all; }
-            </style></head>
-            <body><div class="sheet">
-              <img class="qr" src="${src}" alt="QR">
-              <div class="tag">${tag}</div>
-            </div></body></html>
-          `;
-
-          const w = window.open("", "_blank");
-          if (!w) return alert("Popup blocked. Allow popups to print.");
-          w.document.open();
-          w.document.write(printHtml);
-          w.document.close();
-          w.focus();
-          setTimeout(() => w.print(), 600);
-        });
-      })();
-
-      async function postForm(endpoint, form) {
-        const formData = new FormData(form);
-        const res = await fetch(endpoint, { method: "POST", body: formData });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.message || "Request failed");
-        return data;
-      }
-
-      document.getElementById("portalForm-login").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        try {
-          const data = await postForm("login.php", e.target);
-          showPopup(data.message || "Logged in.", true);
-          setAuthedUI(true, Boolean(data?.data?.isAdmin));
-        } catch (err) {
-          showPopup(err.message || "Login failed.", false);
-        }
-      });
-
-      document.getElementById("logoutBtn").addEventListener("click", async () => {
-        try {
-          const res = await fetch("logout.php", { method: "POST" });
-          const data = await res.json().catch(() => ({}));
-          showPopup(data.message || "Logged out.", true);
-        } finally {
-          setAuthedUI(false, false);
-        }
-      });
-
-      document.getElementById("portalForm-send").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        try {
-          const data = await postForm("documentSend.php", e.target);
-          showPopup(`Saved. File ID: ${data.data?.fileId || ""}`, true);
-        } catch (err) {
-          showPopup(err.message || "Send failed.", false);
-        }
-      });
-
-      document.getElementById("portalForm-receive").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        try {
-          const data = await postForm("documentReceive.php", e.target);
-          showPopup(data.message || "Received.", true);
-        } catch (err) {
-          showPopup(err.message || "Receive failed.", false);
-        }
-      });
-
-      document.getElementById("portalForm-track").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        try {
-          const data = await postForm("trackDocument.php", e.target);
-          showPopup(`${data.data?.status || "OK"}: ${data.data?.documentName || ""}`, true);
-        } catch (err) {
-          showPopup(err.message || "Track failed.", false);
-        }
-      });
-
-      document.getElementById("portalForm-admin-create").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        try {
-          const data = await postForm("adminCreateOffice.php", e.target);
-          showPopup(data.message || "Created.", true);
-          e.target.reset();
-        } catch (err) {
-          showPopup(err.message || "Create failed.", false);
-        }
-      });
-
-      async function loadOffices() {
-        const tbody = document.getElementById("adminOfficesTbody");
-        tbody.innerHTML = `<tr><td colspan="4" style="padding:10px; color:#666;">Loading...</td></tr>`;
-
-        try {
-          const res = await fetch("adminListOffices.php");
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data.message || "Failed to load offices.");
-
-          const offices = data?.data?.offices || [];
-          if (!offices.length) {
-            tbody.innerHTML = `<tr><td colspan="4" style="padding:10px; color:#666;">No offices found.</td></tr>`;
-            return;
-          }
-
-          tbody.innerHTML = offices
-            .map((o) => {
-              const role = o.isAdmin ? "Admin" : "Office";
-              const toggleLabel = o.isAdmin ? "Demote" : "Promote";
-              const toggleTo = o.isAdmin ? "0" : "1";
-
-              return `
-                <tr>
-                  <td style="padding:10px; border-bottom:1px solid #eee; font-family:monospace;">${o.username}</td>
-                  <td style="padding:10px; border-bottom:1px solid #eee;">${role}</td>
-                  <td style="padding:10px; border-bottom:1px solid #eee;">${o.createdAt}</td>
-                  <td style="padding:10px; border-bottom:1px solid #eee; white-space:nowrap;">
-                    <button type="button"
-                            class="admin-action-btn"
-                            data-action="toggle"
-                            data-username="${o.username}"
-                            data-isadmin="${toggleTo}">
-                      ${toggleLabel}
-                    </button>
-                    <button type="button"
-                            class="admin-action-btn"
-                            data-action="delete"
-                            data-username="${o.username}">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              `;
-            })
-            .join("");
-
-          // bind action buttons
-          tbody.querySelectorAll(".admin-action-btn").forEach((btn) => {
-            btn.addEventListener("click", async () => {
-              const action = btn.getAttribute("data-action");
-              const username = btn.getAttribute("data-username");
-
-              if (action === "toggle") {
-                const isAdmin = btn.getAttribute("data-isadmin");
-                const ok = confirm(`Change admin role for "${username}"?`);
-                if (!ok) return;
-
-                const form = new FormData();
-                form.append("username", username);
-                form.append("isAdmin", isAdmin);
-
-                try {
-                  const res = await fetch("adminSetRole.php", { method: "POST", body: form });
-                  const data = await res.json().catch(() => ({}));
-                  if (!res.ok) throw new Error(data.message || "Failed to update role.");
-                  showPopup(data.message || "Role updated.", true);
-                  await loadOffices();
-                } catch (err) {
-                  showPopup(err.message || "Role update failed.", false);
-                }
-              }
-
-              if (action === "delete") {
-                const ok = confirm(`Delete office "${username}"? This cannot be undone.`);
-                if (!ok) return;
-
-                const form = new FormData();
-                form.append("username", username);
-
-                try {
-                  const res = await fetch("adminDeleteOffice.php", { method: "POST", body: form });
-                  const data = await res.json().catch(() => ({}));
-                  if (!res.ok) throw new Error(data.message || "Failed to delete office.");
-                  showPopup(data.message || "Office deleted.", true);
-                  await loadOffices();
-                } catch (err) {
-                  showPopup(err.message || "Delete failed.", false);
-                }
-              }
-            });
-          });
-        } catch (err) {
-          tbody.innerHTML = `<tr><td colspan="4" style="padding:10px; color:#b22222;">${err.message || "Error"}</td></tr>`;
-        }
-      }
-
-      document.getElementById("adminRefreshBtn").addEventListener("click", async () => {
-        await loadOffices();
-      });
-
-      document.getElementById("portalForm-admin-reset").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        try {
-          const data = await postForm("adminResetPassword.php", e.target);
-          showPopup(data.message || "Password updated.", true);
-          e.target.reset();
-        } catch (err) {
-          showPopup(err.message || "Reset failed.", false);
-        }
-      });
-
-      // Optional: auto-load offices whenever Admin tab is opened
-      document.getElementById("adminTabBtn").addEventListener("click", () => {
-        loadOffices();
-      });
-
-      // initial session check
-      (async function () {
-        try {
-          const res = await fetch("me.php");
-          const data = await res.json();
-          setAuthedUI(Boolean(data?.data?.loggedIn), Boolean(data?.data?.isAdmin));
-        } catch {
-          setAuthedUI(false, false);
-        }
-      })();
-    </script>
+    <script src="app.js"></script>
   </body>
 </html>

@@ -13,15 +13,28 @@ if ($fileID === '') {
 
 try {
     $conn = db();
-    $stmt = $conn->prepare("
-        SELECT unique_file_key, document_name, referring_to, document_type,
-               source_username, receiver_username, created_at, delivered_at
-        FROM documents
-        WHERE unique_file_key = ?
-          AND (source_username = ? OR receiver_username = ?)
-        LIMIT 1
-    ");
-    $stmt->bind_param("sss", $fileID, $office, $office);
+
+    if (current_is_admin()) {
+        $stmt = $conn->prepare("
+            SELECT unique_file_key, document_name, referring_to, document_type,
+                   source_username, receiver_username, created_at, delivered_at, status
+            FROM documents
+            WHERE unique_file_key = ?
+            LIMIT 1
+        ");
+        $stmt->bind_param("s", $fileID);
+    } else {
+        $stmt = $conn->prepare("
+            SELECT unique_file_key, document_name, referring_to, document_type,
+                   source_username, receiver_username, created_at, delivered_at, status
+            FROM documents
+            WHERE unique_file_key = ?
+              AND (source_username = ? OR receiver_username = ?)
+            LIMIT 1
+        ");
+        $stmt->bind_param("sss", $fileID, $office, $office);
+    }
+
     $stmt->execute();
     $res = $stmt->get_result();
 
@@ -30,7 +43,28 @@ try {
         json_response(404, ["status" => "error", "message" => "Document not found."]);
     }
 
-    $status = ($row["delivered_at"] ?? null) ? "delivered" : "in_transit";
+    $ev = $conn->prepare("
+        SELECT event_type, actor_username, note, from_status, to_status, created_at
+        FROM document_events
+        WHERE unique_file_key = ?
+        ORDER BY created_at ASC, id ASC
+        LIMIT 200
+    ");
+    $ev->bind_param("s", $fileID);
+    $ev->execute();
+    $evRes = $ev->get_result();
+
+    $events = [];
+    while ($e = $evRes->fetch_assoc()) {
+        $events[] = [
+            "type" => (string)$e["event_type"],
+            "actor" => (string)$e["actor_username"],
+            "note" => $e["note"],
+            "fromStatus" => $e["from_status"],
+            "toStatus" => $e["to_status"],
+            "createdAt" => (string)$e["created_at"],
+        ];
+    }
 
     json_response(200, [
         "status" => "success",
@@ -44,7 +78,8 @@ try {
             "receiverOffice" => $row["receiver_username"],
             "createdAt" => $row["created_at"],
             "deliveredAt" => $row["delivered_at"],
-            "status" => $status
+            "status" => (string)$row["status"],
+            "events" => $events
         ]
     ]);
 } catch (Throwable $e) {
