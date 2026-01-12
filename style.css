@@ -1,0 +1,180 @@
+/* ========== RESET & BASE ========== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f0f0;
+  padding-bottom: 4rem;
+  overflow: hidden;
+}
+
+/* ========== HEADER & NAVIGATION ========== */
+header {
+  background-color: #222;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+header button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.3s;
+}
+
+header button.active {
+  border-bottom: 2px solid #00bfa6;
+  font-weight: bold;
+}
+
+#title {
+  align-content: center;
+}
+
+/* ========== MAIN LAYOUT ========== */
+main {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========== SECTION DISPLAY CONTROL ========== */
+/* Only one .tab.active is visible at a time */
+.tab {
+  display: none;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  background-color: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tab.active {
+  display: block;
+}
+
+/* ========== SECTION CONTENT ========== */
+.portal-section-title {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+/* ========== FORM STYLES ========== */
+.form-group {
+  margin-bottom: 1.2rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: #333;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.form-group-row {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.form-group-row .form-group {
+  flex: 1;
+  min-width: 100px;
+}
+
+
+/* Radio group for communication type */
+.radio-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.radio-group label {
+  font-weight: normal;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Form actions (submit button area) */
+.form-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* ========== BUTTONS ========== */
+.btn-primary {
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: #00bfa6; /* accent color */
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 6px 14px rgba(0, 191, 166, 0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 191, 166, 0.35);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(0, 191, 166, 0.25);
+}
+
+.btn-primary:focus {
+  outline: 2px solid #8de6dc; /* accessible focus */
+  outline-offset: 2px;
+}
+
+/* ========== ABOUT SECTION IMAGE ========== */
+#domImage {
+  height: 250px;
+  padding-bottom: 20px;
+}
+
+/* ========== TYPOGRAPHY ========== */
+h1 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+p {
+  font-size: 1.1rem;
+  color: #555;
+}
