@@ -1,45 +1,58 @@
-# BulSU Document Tracker (Local Setup)
+# BulSU Document Tracker — Setup Guide (Linux / Windows / macOS)
 
-This project is a simple PHP + MariaDB web app. Configuration is done via a local **`.env`** file that is automatically loaded by [`db()`](connect.php) in [`connect.php`](connect.php).
+A lightweight **PHP + MariaDB** web app. Configuration is done via a local **`.env`** file that is auto-loaded by [`db()`](connect.php) in [`connect.php`](connect.php).  
+Goal: **clone → create DB → copy `.env` → run** (no code edits).
 
 ---
 
-## 1) Requirements (any OS)
+## What you need (all operating systems)
 
-### Software
-- **PHP 8+** with **mysqli**
-- **MariaDB** (or MySQL-compatible)
+### 1) PHP (8+ recommended)
+- Must have the **mysqli** extension enabled.
 
-### Quick checks
+Verify:
 ```sh
 php -v
 php -m | grep -i mysqli
 ```
 
-If `mysqli` is missing, install/enable the PHP MySQL extension.
+If `mysqli` is missing:
+- **Linux**: install `php-mysql` / `php-mysqli` (package name varies)
+- **Windows (XAMPP/Laragon/WAMP)**: enable `extension=mysqli` in `php.ini`
+
+### 2) MariaDB (or MySQL-compatible)
+Verify MariaDB is running:
+- **Linux**:
+```sh
+sudo systemctl status mariadb
+```
 
 ---
 
-## 2) Project files you should know
-- Config loader + DB connector: [`connect.php`](connect.php) (see [`db()`](connect.php))
+## Project entry points / important files
+- UI: [`index.html`](index.html) + [`app.js`](app.js) + [`style.css`](style.css)
+- DB config loader + connector: [`connect.php`](connect.php)
 - Auth/session helpers: [`auth.php`](auth.php)
-- DB-only health endpoint: [`health.php`](health.php)
-- Main UI: [`index.html`](index.html) + [`app.js`](app.js) + [`style.css`](style.css)
 - DB schema: [`schema.sql`](schema.sql)
+- DB-only check (no login required): [`health.php`](health.php)
 
 ---
 
-## 3) Configure `.env` (no code edits)
+## Quick start (recommended flow)
 
-### Step A — create `.env`
-Copy `.env.example` to `.env` in the project root:
+### Step 1 — Clone and enter the folder
+```sh
+git clone <your-repo-url>
+cd bulsuDocuTracker
+```
 
+### Step 2 — Create `.env` (local configuration)
+Copy the example and edit values:
 ```sh
 cp .env.example .env
 ```
 
-Edit `.env` to match your DB:
-
+Edit `.env`:
 ```ini
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -50,15 +63,11 @@ APP_DEBUG=0
 ```
 
 Notes:
-- `APP_DEBUG=1` makes API errors show the real message (useful during setup).
-- `.env` is local machine config. Do not commit it.
+- `.env` should be **local only** (do not commit).
+- Set `APP_DEBUG=1` temporarily if troubleshooting.
 
----
-
-## 4) Database setup (Linux/macOS/Windows)
-
-### Step A — create database and user
-Run these SQL commands in MariaDB (replace `YOUR_PASSWORD`):
+### Step 3 — Create DB + user + import schema
+Open a MariaDB client and run (replace `YOUR_PASSWORD`):
 
 ```sql
 CREATE DATABASE IF NOT EXISTS bulsu_docu_tracker
@@ -71,58 +80,35 @@ CREATE USER IF NOT EXISTS 'bulsu'@'127.0.0.1' IDENTIFIED BY 'YOUR_PASSWORD';
 GRANT ALL PRIVILEGES ON bulsu_docu_tracker.* TO 'bulsu'@'localhost';
 GRANT ALL PRIVILEGES ON bulsu_docu_tracker.* TO 'bulsu'@'127.0.0.1';
 FLUSH PRIVILEGES;
-```
 
-### Step B — import schema
-Import [`schema.sql`](schema.sql):
-
-```sql
 USE bulsu_docu_tracker;
 SOURCE /path/to/bulsuDocuTracker/schema.sql;
-```
 
-(Windows: use your SQL tool’s “Run SQL file” to execute `schema.sql`.)
-
-### Step C — confirm tables exist
-```sql
 SHOW TABLES;
 ```
 
-Expected:
+Expected tables:
 - `office_accounts`
 - `documents`
 - `document_events`
 
----
+### Step 4 — Ensure there is at least one admin account
+If your DB is already seeded and has users/admins, you can skip this.
 
-## 5) Create your first admin account
-
-If you already have users in `office_accounts`, you can skip this.
-
-### Step A — generate a password hash (PHP)
-Run this in a terminal (choose your password):
-
+**Generate a password hash using PHP:**
 ```sh
 php -r 'echo password_hash("AdminPass123!", PASSWORD_DEFAULT), PHP_EOL;'
 ```
 
-Copy the printed hash.
-
-### Step B — insert admin user (SQL)
+Insert admin (paste the hash):
 ```sql
 USE bulsu_docu_tracker;
-
 INSERT INTO office_accounts (username, password, is_admin)
 VALUES ('admin', 'PASTE_HASH_HERE', 1);
 ```
 
----
-
-## 6) Run the app
-
-### Option 1 (recommended): PHP built-in server
+### Step 5 — Run the web server
 From the project folder:
-
 ```sh
 php -S 127.0.0.1:8000
 ```
@@ -130,89 +116,110 @@ php -S 127.0.0.1:8000
 Open:
 - http://127.0.0.1:8000/index.html
 
-### DB-only test (recommended)
-This checks only DB connectivity + required tables:
+---
+
+## Health checks (recommended before logging in)
+
+### DB-only check
+This checks **only DB connectivity + required tables**:
 - http://127.0.0.1:8000/health.php (see [`health.php`](health.php))
 
-CLI test:
+CLI:
 ```sh
 curl -i http://127.0.0.1:8000/health.php
 ```
 
+### Session/auth check
+- http://127.0.0.1:8000/me.php (see [`me.php`](me.php))
+
 ---
 
-## 7) OS-specific instructions
+## OS-specific notes
 
-## Linux (example)
-### Install packages (examples; depends on distro)
-- Arch: `php`, `php-mysql`, `mariadb`
-- Ubuntu/Debian: `php`, `php-mysql`, `mariadb-server`
+## Linux
+### Install packages (examples)
+- **Arch**:
+  - `sudo pacman -S php php-mysql mariadb`
+- **Debian/Ubuntu**:
+  - `sudo apt install php php-mysql mariadb-server`
 
 ### Start MariaDB
 ```sh
 sudo systemctl enable --now mariadb
-sudo systemctl status mariadb
+sudo systemctl restart mariadb
 ```
 
-### Open MariaDB shell
-On some systems, root uses socket auth:
+### MariaDB “root” login on Linux
+On some distros, `root` uses socket auth (no password):
 ```sh
 sudo mariadb
+```
+This is normal—create the `bulsu` user as shown above.
+
+### If DB works only via socket (rare)
+Set these in `.env`:
+```ini
+DB_HOST=localhost
+DB_SOCKET=/path/to/mysql.sock
+```
+(`DB_SOCKET` is supported by [`connect.php`](connect.php).)
+
+Find the socket path:
+```sh
+sudo mariadb -e "SHOW VARIABLES LIKE 'socket';"
 ```
 
 ---
 
-## Windows setup
-
+## Windows
 ### Option A: Laragon / XAMPP / WAMP (easiest GUI)
 1. Install Laragon or XAMPP.
 2. Start **Apache** + **MySQL/MariaDB**.
-3. Put the project folder into the web root:
+3. Place folder in web root:
    - XAMPP: `C:\xampp\htdocs\bulsuDocuTracker`
    - Laragon: `C:\laragon\www\bulsuDocuTracker`
-4. Import [`schema.sql`](schema.sql) in phpMyAdmin / HeidiSQL.
-5. Copy `.env.example` → `.env` and set DB credentials.
-6. Open:
+4. Import [`schema.sql`](schema.sql) using phpMyAdmin/HeidiSQL.
+5. Copy `.env.example` → `.env` and set DB creds.
+6. Visit:
    - http://localhost/bulsuDocuTracker/index.html
 
-### Option B: PHP built-in server (no Apache needed)
-1. Install PHP (and ensure `mysqli` is enabled).
+### Option B: PHP built-in server (no Apache)
+1. Install PHP and ensure `mysqli` is enabled.
 2. Install MariaDB.
-3. Configure `.env`.
+3. Create `.env`.
 4. Run (PowerShell):
 ```powershell
 cd C:\path\to\bulsuDocuTracker
 php -S 127.0.0.1:8000
 ```
-Open:
-- http://127.0.0.1:8000/index.html
 
 ---
 
-## 8) Troubleshooting
+## macOS
+- Install PHP (Homebrew) and MariaDB (Homebrew), or use a local stack.
+- Same steps as “Quick start”.
+- If using Homebrew MariaDB, ensure the service is running.
 
-### “Server error” on login
-- Turn on debug:
-  - set `APP_DEBUG=1` in `.env`
-- Check DB-only endpoint:
-  - http://127.0.0.1:8000/health.php
+---
 
-Common causes:
-- Wrong `.env` values (host/user/pass/db)
-- MariaDB not running
+## Troubleshooting
+
+### “Server error” when logging in
+1. Set `APP_DEBUG=1` in `.env`
+2. Confirm DB health:
+   - http://127.0.0.1:8000/health.php
+3. Confirm MariaDB is running and `.env` credentials match the DB user/password.
+
+### Common causes
+- Wrong `DB_PASS` in `.env`
+- MariaDB not started
 - `mysqli` not enabled
-
-### DB connects only via socket (rare; Linux)
-If TCP fails, set:
-```ini
-DB_HOST=localhost
-DB_SOCKET=/path/to/mysql.sock
-```
-[`db()`](connect.php) in [`connect.php`](connect.php) supports `DB_SOCKET`.
+- Using the wrong `DB_HOST` (try `localhost` or `127.0.0.1`)
+- Schema not imported (`health.php` will show missing tables)
 
 ---
 
-## 9) Security notes (local/dev)
-- Do not expose this server to the public internet as-is.
+## Security / sharing notes
+- Do **not** commit `.env` (it contains secrets).
 - Keep `APP_DEBUG=0` for normal use.
-- Do not commit `.env`.
+- This is intended for local/dev use unless you harden deployment (HTTPS, proper server config, etc.).
