@@ -11,14 +11,23 @@ function db(): mysqli {
         throw new RuntimeException('mysqli extension is not enabled. Install/enable php-mysql (mysqli).');
     }
 
-    $host = getenv('DB_HOST') ?: 'sql100.infinityfree.com';
-    $db   = getenv('DB_NAME') ?: 'if0_39606867_bulsu_docu_tracker';
-    $user = getenv('DB_USER') ?: 'if0_39606867';
-    $pass = getenv('DB_PASS') ?: '';
+    // Local defaults (override via env vars)
+    $db     = getenv('DB_NAME') ?: 'bulsu_docu_tracker';
+    $user   = getenv('DB_USER') ?: 'bulsu';
+    $pass   = getenv('DB_PASS') ?: 'test1234'; // <-- set your local password here
+    $port   = (int)(getenv('DB_PORT') ?: 3306);
+    $socket = getenv('DB_SOCKET') ?: '';
 
-    $conn = new mysqli($host, $user, $pass, $db);
+    $host = getenv('DB_HOST') ?: ($socket !== '' ? 'localhost' : '127.0.0.1');
+
+    $conn = new mysqli($host, $user, $pass, $db, $port, $socket !== '' ? $socket : null);
+
     if ($conn->connect_error) {
-        error_log("DB connect failed host={$host} db={$db} user={$user} err=" . $conn->connect_error);
+        $msg = "DB connect failed host={$host} db={$db} user={$user} errno={$conn->connect_errno} err={$conn->connect_error}";
+        error_log($msg);
+        if (getenv('APP_DEBUG') === '1') {
+            throw new RuntimeException($msg);
+        }
         throw new RuntimeException('Database connection failed.');
     }
 
